@@ -16,7 +16,7 @@ TDRPDecoder::TDRPDecoder(const graph *graph)
 
 double TDRPDecoder::decode(const std::vector<double> &chromosome) const
 {
-	// Conta uma nova avaliação da função objetivo.
+	// conta uma nova avaliação da função objetivo
 	evaluation_counter->fetch_add(1, std::memory_order_relaxed);
 
 	const uint32_t n = graph_num_vertices(graph_);
@@ -30,6 +30,8 @@ double TDRPDecoder::decode(const std::vector<double> &chromosome) const
 	double fitness = 0.0;
 
 	std::vector<uint8_t> f(n, 0);
+
+	// converte as chaves aleatórias no espaço do problema
 	for (uint32_t i = 0; i < n; ++i)
 	{
 		f[i] = static_cast<uint8_t>(chromosome[i] * 3.0);
@@ -42,8 +44,13 @@ double TDRPDecoder::decode(const std::vector<double> &chromosome) const
 			continue;
 		}
 
-		uint32_t deg = graph_degree(graph_, v);
-		const uint32_t *neighbors = graph_neighbors(graph_, v, &deg);
+		// captura os vizinhos de v
+		uint32_t deg_v;
+		const uint32_t *neighbors = graph_neighbors(graph_, v, &deg_v);
+		if (deg_v == 0)
+		{
+			continue;
+		}
 	}
 
 	return fitness;
