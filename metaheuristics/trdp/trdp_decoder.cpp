@@ -14,6 +14,10 @@ TDRPDecoder::TDRPDecoder(const graph *graph)
 	}
 }
 
+static inline void reduce_weights(const graph *graph, std::vector<uint8_t> &labeling)
+{
+}
+
 double TDRPDecoder::decode(const std::vector<double> &chromosome) const
 {
 	// conta uma nova avaliação da função objetivo
@@ -27,8 +31,6 @@ double TDRPDecoder::decode(const std::vector<double> &chromosome) const
 		    "TDRPDecoder: O tamanho do cromossomos deve ser igual o número de vértices do grafo;");
 	}
 
-	double fitness = 0.0;
-
 	std::vector<uint8_t> f(n, 0);
 
 	// converte as chaves aleatórias no espaço do problema
@@ -37,6 +39,7 @@ double TDRPDecoder::decode(const std::vector<double> &chromosome) const
 		f[i] = static_cast<uint8_t>(chromosome[i] * 3.0);
 	}
 
+	// garante que todo vértice de rôtulo 0 tenha vizinho 2
 	for (uint32_t v = 0; v < n; ++v)
 	{
 		if (f[v] != 0)
@@ -44,14 +47,90 @@ double TDRPDecoder::decode(const std::vector<double> &chromosome) const
 			continue;
 		}
 
-		// captura os vizinhos de v
+		// pega o grau de v e o inicio do vetor de seus vizinhos
 		uint32_t deg_v;
-		const uint32_t *neighbors = graph_neighbors(graph_, v, &deg_v);
+		const uint32_t *neighbors_v = graph_neighbors(graph_, v, &deg_v);
 		if (deg_v == 0)
+		{
+			// vértice isolado, para o trdp não pode existir vértices isolados, logo a instância não é válida
+			continue;
+		}
+
+		// procura o vizinho com rôtulo 2
+		bool has_neighbor_2 = false;
+		uint32_t chosen = neighbors_v[0];
+		for (uint32_t i = 0; i < deg_v; ++i)
+		{
+			const uint32_t u = neighbors_v[i];
+			if (f[u] == 2)
+			{
+				// se ouver um vizinho com rôtulo 2, apenas continua
+				has_neighbor_2 = true;
+				continue;
+			}
+
+			//prioriza promover quem já tem o maior rôtulo e desempata pela chave
+			if (f[u] > f[chosen] || (f[u] == f[chosen] && chromosome[u] > chromosome[chosen]))
+			{
+				chosen = u;
+			}
+		}
+
+		if (has_neighbor_2)
 		{
 			continue;
 		}
+
+		f[chosen] = 2;
 	}
 
+	for (uint32_t v = 0; v < n; ++v)
+	{
+		if (f[v] == 0)
+		{
+			continue;
+		}
+
+		// pega o grau de v e o inicio do vetor de seus vizinhos
+		uint32_t deg_v;
+		const uint32_t *neighbors_v = graph_neighbors(graph_, v, &deg_v);
+		if (deg_v == 0)
+		{
+			// vértice isolado, para o trdp não pode existir vértices isolados, logo a instância não é válida
+			continue;
+		}
+
+		// procura o vizinho com rôtulo 2
+		bool has_positive_neighbor = false;
+		uint32_t chosen = neighbors_v[0];
+		for (uint32_t i = 0; i < deg_v; ++i)
+		{
+			const uint32_t u = neighbors_v[i];
+			if (f[u] > 0)
+			{
+				has_positive_neighbor = true;
+				break;
+			}
+
+			// escolhe quais incrementar pela chave
+			if (chromosome[u] > chromosome[chosen])
+			{
+				chosen = u;
+			}
+		}
+
+		if (has_positive_neighbor)
+		{
+			continue;
+		}
+		f[chosen] = 1;
+	}
+
+	// retorno do fitness
+	double fitness = 0.0;
+	for (uint32_t v = 0; v < n; ++v)
+	{
+		fitness += f[v];
+	}
 	return fitness;
 }
