@@ -12,6 +12,7 @@ public:
 	explicit TDRPDecoder(const graph *graph);
 
 	double decode(const std::vector<double> &chromosome) const;
+	uint64_t evaluation_count() const;
 
 private:
 	const graph *graph_;

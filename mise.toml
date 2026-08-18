@@ -1,0 +1,8 @@
+[tasks.metaheuristics-build]
+description = "Configura e compila o solver de meta-heuristicas em Release"
+run = '''
+mkdir -p metaheuristics/build
+cd metaheuristics/build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j4
+'''

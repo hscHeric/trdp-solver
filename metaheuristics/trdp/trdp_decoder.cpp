@@ -14,6 +14,11 @@ TDRPDecoder::TDRPDecoder(const graph *graph)
 	}
 }
 
+uint64_t TDRPDecoder::evaluation_count() const
+{
+	return evaluation_counter->load(std::memory_order_relaxed);
+}
+
 // verifica se o vértice segue as restrições do problema
 static inline bool is_vertex_feasible(const graph *g, const std::vector<uint8_t> &f, uint32_t v)
 {
